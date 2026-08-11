@@ -21,9 +21,13 @@ namespace Fx3Flasher.Core.Devices
             IProgress<OperationProgress> progress,
             CancellationToken cancellationToken);
 
-        /// <summary>Erase the device to blank bootloader state by invalidating the boot image.</summary>
+        /// <summary>
+        /// Erase the device to blank bootloader state by programming a dedicated erase image
+        /// (a valid FX3 boot image whose payload returns the device to USB boot).
+        /// </summary>
         DeviceOperationResult EraseEeprom(
             Fx3DeviceInfo device,
+            string eraseImageFilePath,
             IProgress<OperationProgress> progress,
             CancellationToken cancellationToken);
     }

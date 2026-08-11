@@ -57,6 +57,9 @@ namespace Fx3Flasher.Core.Models
         /// <summary>Whether an image checksum must validate before programming is permitted.</summary>
         public bool RequireChecksum { get; set; } = true;
 
+        /// <summary>Optional path to a default erase image that returns the board to blank bootloader.</summary>
+        public string EraseImagePath { get; set; }
+
         public bool MatchesBootloader(int vid, int pid)
         {
             return Contains(BootloaderIds, vid, pid);

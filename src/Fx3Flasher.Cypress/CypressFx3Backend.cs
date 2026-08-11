@@ -87,16 +87,44 @@ namespace Fx3Flasher.Cypress
 
         public DeviceOperationResult EraseEeprom(
             Fx3DeviceInfo device,
+            string eraseImageFilePath,
             IProgress<OperationProgress> progress,
             CancellationToken cancellationToken)
         {
-            // NOTE: CyUSB's high-level API exposes no native EEPROM erase and DownloadFw refuses
-            // images without a valid 'CY' signature, so an erase cannot be synthesized safely here.
-            // The erase mechanism (blank-signature write via the FX3 flash-programmer vendor commands,
-            // or a dedicated erase image) is a pending design decision and is intentionally not
-            // implemented until confirmed, to avoid bricking hardware.
-            return DeviceOperationResult.Fail(
-                "Erase is not yet configured. The FX3 EEPROM erase method must be confirmed before enabling this action.");
+            if (device == null)
+            {
+                return DeviceOperationResult.Fail("No device selected.");
+            }
+
+            if (string.IsNullOrEmpty(eraseImageFilePath))
+            {
+                return DeviceOperationResult.Fail(
+                    "No erase image configured. Provide a dedicated erase .img to return the board to blank bootloader.");
+            }
+
+            Report(progress, 5, "Locating device");
+
+            using (var list = new USBDeviceList(CyConst.DEVICES_CYUSB))
+            {
+                CyFX3Device fx3 = FindFx3(list, device);
+                if (fx3 == null)
+                {
+                    return DeviceOperationResult.Fail(
+                        "Selected FX3 device is no longer present or is not accessible via the CyUSB driver.");
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                Report(progress, 25, "Writing erase image to EEPROM");
+
+                FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(eraseImageFilePath, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
+
+                Report(progress, 90, "Finalizing");
+                DeviceOperationResult result = CyUsbErrorMap.ToResult(
+                    fx3, code, "Erase image written; device will return to blank bootloader after power cycle.");
+
+                Report(progress, 100, result.Success ? "Done" : "Failed");
+                return result;
+            }
         }
 
         private Fx3DeviceInfo Describe(USBDevice dev, int index)
