@@ -1,0 +1,17 @@
+## Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+.vs/
+
+## Rider / VS Code
+.idea/
+
+## NuGet
+*.nupkg
+packages/

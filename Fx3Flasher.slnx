@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Fx3Flasher.Core/Fx3Flasher.Core.csproj" />
+  </Folder>
+</Solution>
