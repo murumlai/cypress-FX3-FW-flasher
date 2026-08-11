@@ -15,3 +15,10 @@ x86/
 ## NuGet
 *.nupkg
 packages/
+
+## Firmware images (device-specific, not source)
+*.img
+
+## Local decompiler / diagnostic artifacts
+cyfx3_decomp.cs
+fx3-flasher-crash.log
