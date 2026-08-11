@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Fx3Flasher.App/Fx3Flasher.App.csproj" />
     <Project Path="src/Fx3Flasher.Core/Fx3Flasher.Core.csproj" />
     <Project Path="src/Fx3Flasher.Cypress/Fx3Flasher.Cypress.csproj" />
   </Folder>

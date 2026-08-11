@@ -1,0 +1,143 @@
+<Window x:Class="Fx3Flasher.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:Fx3Flasher.App.Converters"
+        Title="Cypress FX3 EEPROM Flasher" Height="720" Width="1080"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <conv:SeverityToBrushConverter x:Key="SeverityToBrush" />
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="200" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,8">
+            <TextBlock DockPanel.Dock="Left" Text="Cypress FX3 EEPROM Flasher"
+                       FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+            <Button DockPanel.Dock="Right" Content="Refresh devices" Padding="12,4"
+                    Command="{Binding RefreshCommand}" />
+        </DockPanel>
+
+        <!-- Main content: devices | actions -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Device list -->
+            <GroupBox Grid.Column="0" Header="Detected FX3 devices" Margin="0,0,8,0">
+                <DataGrid ItemsSource="{Binding Devices}"
+                          SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" CanUserAddRows="False"
+                          SelectionMode="Single" GridLinesVisibility="Horizontal">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="40" />
+                        <DataGridTextColumn Header="Name" Binding="{Binding FriendlyName}" Width="*" />
+                        <DataGridTextColumn Header="USB ID" Binding="{Binding UsbIdText}" Width="90" />
+                        <DataGridTextColumn Header="State" Binding="{Binding State}" Width="120" />
+                        <DataGridTextColumn Header="Profile" Binding="{Binding ProfileName}" Width="130" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+
+            <!-- Right panel -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <GroupBox Grid.Row="0" Header="Selected device">
+                    <TextBox Text="{Binding SelectedDeviceDetails, Mode=OneWay}" IsReadOnly="True"
+                             BorderThickness="0" Background="Transparent"
+                             FontFamily="Consolas" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             Height="150" />
+                </GroupBox>
+
+                <GroupBox Grid.Row="1" Header="Firmware image" Margin="0,8,0,0">
+                    <Grid Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Program image:"
+                                   VerticalAlignment="Center" Margin="0,0,8,4" />
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ImagePath}"
+                                 VerticalAlignment="Center" Margin="0,0,8,4" />
+                        <Button Grid.Row="0" Grid.Column="2" Content="Browse..." Padding="10,2"
+                                Margin="0,0,0,4" Command="{Binding BrowseImageCommand}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Erase image:"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EraseImagePath}"
+                                 VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Grid.Row="1" Grid.Column="2" Content="Browse..." Padding="10,2"
+                                Command="{Binding BrowseEraseImageCommand}" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Grid.Row="2" Header="Actions" Margin="0,8,0,0">
+                    <WrapPanel Margin="4">
+                        <Button Content="Program" Width="110" Height="34" Margin="0,0,8,0"
+                                Command="{Binding ProgramCommand}" />
+                        <Button Content="Erase to blank" Width="130" Height="34" Margin="0,0,8,0"
+                                Command="{Binding EraseCommand}" />
+                        <Button Content="Cancel" Width="90" Height="34" Margin="0,0,8,0"
+                                Command="{Binding CancelCommand}" />
+                    </WrapPanel>
+                </GroupBox>
+            </Grid>
+        </Grid>
+
+        <!-- Log -->
+        <GroupBox Grid.Row="2" Header="Operation log" Margin="0,8,0,0">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Bottom" LastChildFill="False" Margin="0,4,0,0">
+                    <Button DockPanel.Dock="Right" Content="Export..." Padding="10,2" Margin="8,0,0,0"
+                            Command="{Binding ExportLogCommand}" />
+                    <Button DockPanel.Dock="Right" Content="Clear" Padding="10,2"
+                            Command="{Binding ClearLogCommand}" />
+                </DockPanel>
+                <ListBox ItemsSource="{Binding LogEntries}" FontFamily="Consolas" FontSize="12"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Foreground="{Binding Severity, Converter={StaticResource SeverityToBrush}}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </GroupBox>
+
+        <!-- Status / progress -->
+        <Grid Grid.Row="3" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Height="18" Minimum="0" Maximum="100"
+                         Value="{Binding ProgressPercent}" Margin="8,0" />
+            <TextBlock Grid.Column="2" Text="{Binding ProgressStage}" VerticalAlignment="Center"
+                       MinWidth="120" />
+        </Grid>
+    </Grid>
+</Window>

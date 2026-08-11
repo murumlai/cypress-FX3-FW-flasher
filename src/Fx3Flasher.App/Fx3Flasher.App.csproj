@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Fx3Flasher.App</RootNamespace>
+    <AssemblyName>Fx3Flasher.App</AssemblyName>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fx3Flasher.Core\Fx3Flasher.Core.csproj" />
+    <ProjectReference Include="..\Fx3Flasher.Cypress\Fx3Flasher.Cypress.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\config\supported-boards.json" Link="config\supported-boards.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
