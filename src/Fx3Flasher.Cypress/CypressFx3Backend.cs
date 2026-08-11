@@ -76,14 +76,22 @@ namespace Fx3Flasher.Cypress
                 cancellationToken.ThrowIfCancellationRequested();
                 Report(progress, 25, "Writing I2C EEPROM");
 
-                FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(imageFilePath, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
+                string preparedImagePath = PrepareI2cEepromImage(imageFilePath, device);
+                try
+                {
+                    FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(preparedImagePath, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
 
-                Report(progress, 90, "Finalizing");
-                DeviceOperationResult result = CyUsbErrorMap.ToResult(
-                    fx3, code, "EEPROM programmed successfully.");
+                    Report(progress, 90, "Finalizing");
+                    DeviceOperationResult result = CyUsbErrorMap.ToResult(
+                        fx3, code, "EEPROM programmed successfully.");
 
-                Report(progress, 100, result.Success ? "Done" : "Failed");
-                return result;
+                    Report(progress, 100, result.Success ? "Done" : "Failed");
+                    return result;
+                }
+                finally
+                {
+                    DeletePreparedImage(preparedImagePath, imageFilePath);
+                }
             }
         }
 
@@ -155,14 +163,22 @@ namespace Fx3Flasher.Cypress
                 cancellationToken.ThrowIfCancellationRequested();
                 Report(progress, 25, "Writing erase image to EEPROM");
 
-                FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(eraseImageFilePath, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
+                string preparedImagePath = PrepareI2cEepromImage(eraseImageFilePath, device);
+                try
+                {
+                    FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(preparedImagePath, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
 
-                Report(progress, 90, "Finalizing");
-                DeviceOperationResult result = CyUsbErrorMap.ToResult(
-                    fx3, code, "Erase image written; device will return to blank bootloader after power cycle.");
+                    Report(progress, 90, "Finalizing");
+                    DeviceOperationResult result = CyUsbErrorMap.ToResult(
+                        fx3, code, "Erase image written; device will return to blank bootloader after power cycle.");
 
-                Report(progress, 100, result.Success ? "Done" : "Failed");
-                return result;
+                    Report(progress, 100, result.Success ? "Done" : "Failed");
+                    return result;
+                }
+                finally
+                {
+                    DeletePreparedImage(preparedImagePath, eraseImageFilePath);
+                }
             }
         }
 
@@ -226,6 +242,50 @@ namespace Fx3Flasher.Cypress
                     catch { /* temp cleanup is best-effort */ }
                 }
             }
+        }
+
+        private string PrepareI2cEepromImage(string imageFilePath, Fx3DeviceInfo device)
+        {
+            BoardProfile profile = ResolveProfile(device);
+            if (profile == null || profile.EepromSizeBytes <= 65536)
+            {
+                return imageFilePath;
+            }
+
+            byte[] data = File.ReadAllBytes(imageFilePath);
+            if (data.Length < 4 || data[0] != 0x43 || data[1] != 0x59)
+            {
+                return imageFilePath;
+            }
+
+            byte desiredControl = (byte)((data[2] & unchecked((byte)~0x0E)) | 0x0E);
+            if (data[2] == desiredControl)
+            {
+                return imageFilePath;
+            }
+
+            data[2] = desiredControl;
+            string tempPath = Path.Combine(
+                Path.GetTempPath(), "fx3-i2c-" + Guid.NewGuid().ToString("N") + ".img");
+            File.WriteAllBytes(tempPath, data);
+            return tempPath;
+        }
+
+        private BoardProfile ResolveProfile(Fx3DeviceInfo device)
+        {
+            bool ambiguous;
+            return device == null ? null : _profiles.Resolve(device.VendorId, device.ProductId, out ambiguous);
+        }
+
+        private static void DeletePreparedImage(string preparedImagePath, string originalImagePath)
+        {
+            if (string.Equals(preparedImagePath, originalImagePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            try { File.Delete(preparedImagePath); }
+            catch { }
         }
 
         private Fx3DeviceInfo Describe(USBDevice dev, int index)

@@ -4,8 +4,7 @@ namespace Fx3Flasher.Core.Firmware
 {
     /// <summary>
     /// Builds a small valid FX3 boot image used as an EEPROM write probe. Cypress DownloadFw derives
-    /// the target EEPROM density from the image length, so the probe is padded to ~4 KB: large enough
-    /// to map to a 2-address-byte density (matching the AT24CM01) yet entirely within the first bank.
+    /// EEPROM size from bImageCTL bits 1..3, so this image advertises size code 7 for AT24CM01.
     /// </summary>
     public static class MinimalBootImage
     {
@@ -17,7 +16,7 @@ namespace Fx3Flasher.Core.Firmware
             var bytes = new List<byte>();
             bytes.Add(0x43); // 'C'
             bytes.Add(0x59); // 'Y'
-            bytes.Add(0x00); // image control
+            bytes.Add(0x0E); // bImageCTL: EEPROM size code 7, AT24CM01 dual-bank path
             bytes.Add(0xB0); // normal image type
 
             const uint address = 0x40003000;
