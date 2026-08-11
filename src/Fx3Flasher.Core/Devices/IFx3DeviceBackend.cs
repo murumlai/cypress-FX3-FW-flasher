@@ -40,5 +40,14 @@ namespace Fx3Flasher.Core.Devices
             string eraseImageFilePath,
             IProgress<OperationProgress> progress,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Probe whether an I2C EEPROM is present by writing a tiny valid boot image and reading the
+        /// FX3 size-detection result. Writes a small probe (there is no non-destructive read API).
+        /// </summary>
+        DeviceOperationResult DetectEeprom(
+            Fx3DeviceInfo device,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken);
     }
 }

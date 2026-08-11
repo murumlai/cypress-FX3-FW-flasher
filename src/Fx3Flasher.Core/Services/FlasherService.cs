@@ -152,6 +152,27 @@ namespace Fx3Flasher.Core.Services
             return new FlasherOperationResult { Success = op.Success, Message = op.Message };
         }
 
+        /// <summary>
+        /// Diagnostic: probe for a connected I2C EEPROM. Writes a tiny probe image and reports whether
+        /// the FX3 detected an EEPROM. There is no non-destructive read path in the high-level API.
+        /// </summary>
+        public FlasherOperationResult DetectEeprom(
+            Fx3DeviceInfo device,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken)
+        {
+            if (device == null || !device.IsSupported)
+            {
+                return LogAndFail(device, "Select a supported device before probing the EEPROM.");
+            }
+
+            _logger.Log(LogSeverity.Info, "Probing for I2C EEPROM...", device.Index);
+            DeviceOperationResult op = _backend.DetectEeprom(device, progress, cancellationToken);
+            _logger.Log(op.Success ? LogSeverity.Success : LogSeverity.Error, op.Message, device.Index);
+
+            return new FlasherOperationResult { Success = op.Success, Message = op.Message };
+        }
+
         public FlasherOperationResult Erase(
             Fx3DeviceInfo device,
             string eraseImageFilePath,

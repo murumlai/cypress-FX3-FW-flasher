@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using CyUSB;
 using Fx3Flasher.Core.Devices;
+using Fx3Flasher.Core.Firmware;
 using Fx3Flasher.Core.Models;
 using Fx3Flasher.Core.Profiles;
 
@@ -161,6 +163,68 @@ namespace Fx3Flasher.Cypress
 
                 Report(progress, 100, result.Success ? "Done" : "Failed");
                 return result;
+            }
+        }
+
+        public DeviceOperationResult DetectEeprom(
+            Fx3DeviceInfo device,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken)
+        {
+            if (device == null)
+            {
+                return DeviceOperationResult.Fail("No device selected.");
+            }
+
+            Report(progress, 5, "Locating device");
+
+            using (var list = new USBDeviceList(CyConst.DEVICES_CYUSB))
+            {
+                CyFX3Device fx3 = FindFx3(list, device);
+                if (fx3 == null)
+                {
+                    return DeviceOperationResult.Fail(
+                        "Selected FX3 device is no longer present or is not accessible via the CyUSB driver.");
+                }
+
+                string temp = Path.Combine(
+                    Path.GetTempPath(), "fx3-detect-" + Guid.NewGuid().ToString("N") + ".img");
+                File.WriteAllBytes(temp, MinimalBootImage.Build());
+
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Report(progress, 40, "Probing I2C EEPROM");
+
+                    FX3_FWDWNLOAD_ERROR_CODE code =
+                        fx3.DownloadFw(temp, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
+
+                    Report(progress, 100, "Done");
+
+                    if (code == FX3_FWDWNLOAD_ERROR_CODE.SUCCESS)
+                    {
+                        return DeviceOperationResult.Ok(
+                            "I2C EEPROM detected and writable: a small probe image was written and verified in the first bank. Re-program or erase to restore the device.",
+                            code.ToString());
+                    }
+
+                    if (code == FX3_FWDWNLOAD_ERROR_CODE.I2CE2PROM_UNKNOWN_I2C_SIZE)
+                    {
+                        return DeviceOperationResult.Fail(
+                            "No I2C EEPROM detected: the FX3 could not determine an EEPROM size. Check I2C wiring, power, write-protect and address pins.",
+                            code.ToString());
+                    }
+
+                    DeviceOperationResult mapped = CyUsbErrorMap.ToResult(fx3, code, string.Empty);
+                    return DeviceOperationResult.Fail(
+                        "I2C EEPROM appears present but the probe write failed: " + mapped.Message,
+                        code.ToString());
+                }
+                finally
+                {
+                    try { File.Delete(temp); }
+                    catch { /* temp cleanup is best-effort */ }
+                }
             }
         }
 

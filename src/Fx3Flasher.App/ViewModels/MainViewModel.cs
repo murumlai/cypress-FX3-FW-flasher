@@ -56,6 +56,7 @@ namespace Fx3Flasher.App.ViewModels
             ProgramCommand = new RelayCommand(ProgramAsync, CanProgram);
             EraseCommand = new RelayCommand(EraseAsync, CanErase);
             TestRamCommand = new RelayCommand(TestRamAsync, CanProgram);
+            DetectEepromCommand = new RelayCommand(DetectEepromAsync, CanDetect);
             CancelCommand = new RelayCommand(Cancel, () => IsBusy);
             ClearLogCommand = new RelayCommand(() => LogEntries.Clear(), () => !IsBusy);
             ExportLogCommand = new RelayCommand(ExportLog, () => LogEntries.Count > 0);
@@ -72,6 +73,7 @@ namespace Fx3Flasher.App.ViewModels
         public ICommand ProgramCommand { get; }
         public ICommand EraseCommand { get; }
         public ICommand TestRamCommand { get; }
+        public ICommand DetectEepromCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand ClearLogCommand { get; }
         public ICommand ExportLogCommand { get; }
@@ -180,6 +182,11 @@ namespace Fx3Flasher.App.ViewModels
                 && !string.IsNullOrEmpty(_imagePath);
         }
 
+        private bool CanDetect()
+        {
+            return !IsBusy && _selectedDevice != null && _selectedDevice.IsSupported;
+        }
+
         private bool CanErase()
         {
             if (IsBusy || _selectedDevice == null || !_selectedDevice.IsSupported)
@@ -268,6 +275,25 @@ namespace Fx3Flasher.App.ViewModels
             }
 
             await RunOperation(progress => _service.TestRam(device, _imagePath, progress, _cts.Token));
+        }
+
+        private async void DetectEepromAsync()
+        {
+            Fx3DeviceInfo device = _selectedDevice;
+            if (device == null)
+            {
+                return;
+            }
+
+            string message = string.Format(
+                "DETECT EEPROM on:\n[{0}] {1}  {2}\n\nThis writes a small probe image to the first EEPROM bank (there is no read-only detect). Re-program or erase afterwards.\n\nProceed?",
+                device.Index, device.FriendlyName, device.UsbIdText);
+            if (!_interaction.Confirm("Confirm Detect EEPROM", message))
+            {
+                return;
+            }
+
+            await RunOperation(progress => _service.DetectEeprom(device, progress, _cts.Token));
         }
 
         private async void EraseAsync()

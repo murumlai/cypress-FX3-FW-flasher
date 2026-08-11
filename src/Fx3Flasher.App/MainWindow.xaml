@@ -101,6 +101,9 @@
                         <Button Content="Test (RAM)" Width="100" Height="34" Margin="0,0,8,0"
                                 ToolTip="Download the program image to RAM only (non-persistent) to isolate the I2C EEPROM path."
                                 Command="{Binding TestRamCommand}" />
+                        <Button Content="Detect EEPROM" Width="120" Height="34" Margin="0,0,8,0"
+                                ToolTip="Probe for a connected I2C EEPROM by writing a tiny probe image (no read-only detect exists)."
+                                Command="{Binding DetectEepromCommand}" />
                         <Button Content="Cancel" Width="90" Height="34" Margin="0,0,8,0"
                                 Command="{Binding CancelCommand}" />
                     </WrapPanel>

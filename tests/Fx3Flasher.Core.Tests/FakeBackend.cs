@@ -45,6 +45,13 @@ namespace Fx3Flasher.Core.Tests
             return DeviceOperationResult.Ok("ram ok");
         }
 
+        public DeviceOperationResult DetectEeprom(
+            Fx3DeviceInfo device,
+            IProgress<OperationProgress> progress, CancellationToken cancellationToken)
+        {
+            return DeviceOperationResult.Ok("eeprom ok");
+        }
+
         public DeviceOperationResult EraseEeprom(
             Fx3DeviceInfo device, string eraseImageFilePath,
             IProgress<OperationProgress> progress, CancellationToken cancellationToken)
