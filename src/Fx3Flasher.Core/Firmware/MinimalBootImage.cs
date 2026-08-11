@@ -3,12 +3,15 @@ using System.Collections.Generic;
 namespace Fx3Flasher.Core.Firmware
 {
     /// <summary>
-    /// Builds a minimal valid FX3 boot image used as a non-diagnostic write probe: a 'CY' header,
-    /// a single one-word section at a valid code address, a zero-length terminator with entry point,
-    /// and the trailing checksum.
+    /// Builds a small valid FX3 boot image used as an EEPROM write probe. Cypress DownloadFw derives
+    /// the target EEPROM density from the image length, so the probe is padded to ~4 KB: large enough
+    /// to map to a 2-address-byte density (matching the AT24CM01) yet entirely within the first bank.
     /// </summary>
     public static class MinimalBootImage
     {
+        // ~4 KB probe: 1024 zero data words keep the write inside EEPROM bank 0 (below 64 KB).
+        private const int DataWords = 1024;
+
         public static byte[] Build()
         {
             var bytes = new List<byte>();
@@ -19,15 +22,17 @@ namespace Fx3Flasher.Core.Firmware
 
             const uint address = 0x40003000;
             const uint entry = 0x40003000;
-            const uint data = 0x00000000;
 
-            AppendUInt32(bytes, 1);       // one 32-bit word
+            AppendUInt32(bytes, DataWords);
             AppendUInt32(bytes, address);
-            AppendUInt32(bytes, data);
+            for (int i = 0; i < DataWords; i++)
+            {
+                AppendUInt32(bytes, 0); // zero payload
+            }
 
             AppendUInt32(bytes, 0);       // terminator length
             AppendUInt32(bytes, entry);
-            AppendUInt32(bytes, data);    // checksum == sum of the single data word (0)
+            AppendUInt32(bytes, 0);       // checksum == sum of zero payload words
 
             return bytes.ToArray();
         }

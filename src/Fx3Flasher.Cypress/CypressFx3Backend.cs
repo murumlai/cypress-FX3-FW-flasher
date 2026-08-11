@@ -204,14 +204,14 @@ namespace Fx3Flasher.Cypress
                     if (code == FX3_FWDWNLOAD_ERROR_CODE.SUCCESS)
                     {
                         return DeviceOperationResult.Ok(
-                            "I2C EEPROM detected and writable: a small probe image was written and verified in the first bank. Re-program or erase to restore the device.",
+                            "I2C EEPROM detected and writable: a ~4 KB probe was written and verified in the first bank. Re-program or erase to restore the device.",
                             code.ToString());
                     }
 
                     if (code == FX3_FWDWNLOAD_ERROR_CODE.I2CE2PROM_UNKNOWN_I2C_SIZE)
                     {
                         return DeviceOperationResult.Fail(
-                            "No I2C EEPROM detected: the FX3 could not determine an EEPROM size. Check I2C wiring, power, write-protect and address pins.",
+                            "FX3 could not determine an I2C EEPROM size even for a standard-density probe. Likely no EEPROM responding, or an I2C addressing/wiring/write-protect issue.",
                             code.ToString());
                     }
 
