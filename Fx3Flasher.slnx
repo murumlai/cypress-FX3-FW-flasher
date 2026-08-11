@@ -4,4 +4,7 @@
     <Project Path="src/Fx3Flasher.Core/Fx3Flasher.Core.csproj" />
     <Project Path="src/Fx3Flasher.Cypress/Fx3Flasher.Cypress.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Fx3Flasher.Core.Tests/Fx3Flasher.Core.Tests.csproj" />
+  </Folder>
 </Solution>
