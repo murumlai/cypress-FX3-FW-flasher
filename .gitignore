@@ -22,3 +22,4 @@ packages/
 ## Local decompiler / diagnostic artifacts
 cyfx3_decomp.cs
 fx3-flasher-crash.log
+c_sharp/
