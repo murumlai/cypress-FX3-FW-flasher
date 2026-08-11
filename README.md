@@ -11,6 +11,7 @@ managed library.
 - Programs a firmware `.img` to the I2C EEPROM.
 - Erases a device back to blank bootloader by writing a dedicated erase image.
 - Verifies operations by re-enumeration (programmed / blank state after the operation).
+- Includes bench diagnostics: RAM download test and staged I2C EEPROM probe.
 - Fail-closed safety gate: no write or erase proceeds unless the device matches a supported
   board profile, the image passes validation, the operation is permitted, and the operator
   confirms the exact device.
@@ -84,6 +85,42 @@ on build. A profile identifies a board by USB VID/PID and declares EEPROM geomet
 Program images must be Cypress FX3 boot images (`.img`) starting with the `CY` signature. The
 validator checks the signature, section structure, trailing checksum, and size against the
 board profile before any write is allowed.
+
+For I2C EEPROM programming, Cypress `CyUSB.dll` derives the EEPROM size from `bImageCTL`
+(image byte 2), specifically `sizeCode = (bImageCTL >> 1) & 0x07`. Size code `6` is the
+64 KB path; size code `7` enables the Microchip 128 KB dual-bank behavior used by AT24CM01.
+If a valid image targets a 128 KB profile but carries the 64 KB code, the app prepares a
+temporary copy with the size bits patched to code `7` before calling `DownloadFw(I2CE2PROM)`.
+The original firmware file is never modified.
+
+Known APM image observations from bench work:
+
+- `APM.APM.3.10.C.img` is a valid FX3 `CY` image and passes validation, but its original
+  image-control byte encoded the 64 KB path. The app now patches the temporary programming
+  copy for the configured AT24CM01 profile.
+- `APM.APM.fakeff.img` is raw `0xFF` data, not a Cypress boot image. `DownloadFw` cannot write
+  it directly because it has no `CY` signature; using it as a raw erase file would require a
+  separate raw-I2C writer/protocol.
+
+## Diagnostics
+
+The UI exposes two bench diagnostics:
+
+- **Test (RAM)** downloads the selected `.img` to FX3 RAM only. This is non-persistent and
+  verifies the USB driver, device handle, and image path independently of the EEPROM.
+- **Detect EEPROM** sends a staged first-bank I2C EEPROM probe and reports where the FX3/CyUSB
+  transfer fails. This is not read-only: it writes a small probe image and asks for confirmation.
+
+Current diagnosis notes for the AT24CM01 board:
+
+- RAM download succeeds, so the USB path and firmware image are usable.
+- EEPROM programming/probing currently fails on the first-bank 4 KB write with `BytesWritten=0`.
+  That happens before the 64 KB bank boundary, so the remaining likely causes are hardware or
+  bootloader I2C access: write-protect asserted, address strapping mismatch, SDA/SCL/pull-up or
+  voltage issue, bus contention, or a faulty EEPROM.
+- For AT24CM01, confirm `WP` is low, the device acknowledges the expected boot address path
+  (`0x50`/`0x51` for the 128 KB dual-bank part), and SDA/SCL activity is present while running
+  Detect EEPROM.
 
 ## Erase and verification notes
 
