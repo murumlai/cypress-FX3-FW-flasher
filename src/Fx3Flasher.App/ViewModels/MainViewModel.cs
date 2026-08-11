@@ -55,6 +55,7 @@ namespace Fx3Flasher.App.ViewModels
             BrowseEraseImageCommand = new RelayCommand(BrowseEraseImage, () => !IsBusy);
             ProgramCommand = new RelayCommand(ProgramAsync, CanProgram);
             EraseCommand = new RelayCommand(EraseAsync, CanErase);
+            TestRamCommand = new RelayCommand(TestRamAsync, CanProgram);
             CancelCommand = new RelayCommand(Cancel, () => IsBusy);
             ClearLogCommand = new RelayCommand(() => LogEntries.Clear(), () => !IsBusy);
             ExportLogCommand = new RelayCommand(ExportLog, () => LogEntries.Count > 0);
@@ -70,6 +71,7 @@ namespace Fx3Flasher.App.ViewModels
         public ICommand BrowseEraseImageCommand { get; }
         public ICommand ProgramCommand { get; }
         public ICommand EraseCommand { get; }
+        public ICommand TestRamCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand ClearLogCommand { get; }
         public ICommand ExportLogCommand { get; }
@@ -255,6 +257,17 @@ namespace Fx3Flasher.App.ViewModels
             }
 
             await RunOperation(progress => _service.Program(device, _imagePath, true, progress, _cts.Token));
+        }
+
+        private async void TestRamAsync()
+        {
+            Fx3DeviceInfo device = _selectedDevice;
+            if (device == null)
+            {
+                return;
+            }
+
+            await RunOperation(progress => _service.TestRam(device, _imagePath, progress, _cts.Token));
         }
 
         private async void EraseAsync()

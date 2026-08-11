@@ -98,6 +98,9 @@
                                 Command="{Binding ProgramCommand}" />
                         <Button Content="Erase to blank" Width="130" Height="34" Margin="0,0,8,0"
                                 Command="{Binding EraseCommand}" />
+                        <Button Content="Test (RAM)" Width="100" Height="34" Margin="0,0,8,0"
+                                ToolTip="Download the program image to RAM only (non-persistent) to isolate the I2C EEPROM path."
+                                Command="{Binding TestRamCommand}" />
                         <Button Content="Cancel" Width="90" Height="34" Margin="0,0,8,0"
                                 Command="{Binding CancelCommand}" />
                     </WrapPanel>

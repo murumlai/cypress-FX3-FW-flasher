@@ -115,6 +115,43 @@ namespace Fx3Flasher.Core.Services
             };
         }
 
+        /// <summary>
+        /// Diagnostic: download the image to RAM only (non-persistent) to isolate whether the
+        /// USB/driver/image path works independently of the I2C EEPROM. No safety gate is applied
+        /// because nothing is written to persistent storage.
+        /// </summary>
+        public FlasherOperationResult TestRam(
+            Fx3DeviceInfo device,
+            string imageFilePath,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken)
+        {
+            BoardProfile profile = ResolveProfile(device);
+
+            FirmwareImage image;
+            try
+            {
+                image = FirmwareImage.Load(imageFilePath);
+            }
+            catch (Exception ex)
+            {
+                return LogAndFail(device, "Failed to load image: " + ex.Message);
+            }
+
+            ImageValidationResult validation = _validator.Validate(image, profile);
+            LogValidation(device, validation);
+            if (!validation.IsValid)
+            {
+                return LogAndFail(device, "Image failed validation; RAM test not attempted.");
+            }
+
+            _logger.Log(LogSeverity.Info, "RAM test download: " + image.FileName, device.Index);
+            DeviceOperationResult op = _backend.DownloadToRam(device, imageFilePath, progress, cancellationToken);
+            _logger.Log(op.Success ? LogSeverity.Success : LogSeverity.Error, op.Message, device.Index);
+
+            return new FlasherOperationResult { Success = op.Success, Message = op.Message };
+        }
+
         public FlasherOperationResult Erase(
             Fx3DeviceInfo device,
             string eraseImageFilePath,

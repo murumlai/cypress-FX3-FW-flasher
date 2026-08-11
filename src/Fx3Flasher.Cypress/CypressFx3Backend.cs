@@ -85,6 +85,43 @@ namespace Fx3Flasher.Cypress
             }
         }
 
+        public DeviceOperationResult DownloadToRam(
+            Fx3DeviceInfo device,
+            string imageFilePath,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken)
+        {
+            if (device == null)
+            {
+                return DeviceOperationResult.Fail("No device selected.");
+            }
+
+            if (string.IsNullOrEmpty(imageFilePath))
+            {
+                return DeviceOperationResult.Fail("No image file specified.");
+            }
+
+            Report(progress, 5, "Locating device");
+
+            using (var list = new USBDeviceList(CyConst.DEVICES_CYUSB))
+            {
+                CyFX3Device fx3 = FindFx3(list, device);
+                if (fx3 == null)
+                {
+                    return DeviceOperationResult.Fail(
+                        "Selected FX3 device is no longer present or is not accessible via the CyUSB driver.");
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                Report(progress, 25, "Downloading to RAM");
+
+                FX3_FWDWNLOAD_ERROR_CODE code = fx3.DownloadFw(imageFilePath, FX3_FWDWNLOAD_MEDIA_TYPE.RAM);
+
+                Report(progress, 100, code == FX3_FWDWNLOAD_ERROR_CODE.SUCCESS ? "Done" : "Failed");
+                return CyUsbErrorMap.ToResult(fx3, code, "Image downloaded to RAM (non-persistent).");
+            }
+        }
+
         public DeviceOperationResult EraseEeprom(
             Fx3DeviceInfo device,
             string eraseImageFilePath,

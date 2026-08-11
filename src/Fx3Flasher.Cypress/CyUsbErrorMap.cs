@@ -24,6 +24,7 @@ namespace Fx3Flasher.Cypress
                 detail = detail + " (" + libraryText + ")";
             }
 
+            detail = detail + " [code " + raw + "]";
             return DeviceOperationResult.Fail(detail, raw);
         }
 

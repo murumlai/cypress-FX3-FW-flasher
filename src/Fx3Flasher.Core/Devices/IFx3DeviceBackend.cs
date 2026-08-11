@@ -22,6 +22,16 @@ namespace Fx3Flasher.Core.Devices
             CancellationToken cancellationToken);
 
         /// <summary>
+        /// Download a firmware image to volatile RAM (non-persistent). Used to isolate whether the
+        /// USB/driver/image path works independently of the I2C EEPROM.
+        /// </summary>
+        DeviceOperationResult DownloadToRam(
+            Fx3DeviceInfo device,
+            string imageFilePath,
+            IProgress<OperationProgress> progress,
+            CancellationToken cancellationToken);
+
+        /// <summary>
         /// Erase the device to blank bootloader state by programming a dedicated erase image
         /// (a valid FX3 boot image whose payload returns the device to USB boot).
         /// </summary>

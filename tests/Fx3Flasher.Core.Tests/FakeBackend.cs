@@ -38,6 +38,13 @@ namespace Fx3Flasher.Core.Tests
             return ProgramResult;
         }
 
+        public DeviceOperationResult DownloadToRam(
+            Fx3DeviceInfo device, string imageFilePath,
+            IProgress<OperationProgress> progress, CancellationToken cancellationToken)
+        {
+            return DeviceOperationResult.Ok("ram ok");
+        }
+
         public DeviceOperationResult EraseEeprom(
             Fx3DeviceInfo device, string eraseImageFilePath,
             IProgress<OperationProgress> progress, CancellationToken cancellationToken)
