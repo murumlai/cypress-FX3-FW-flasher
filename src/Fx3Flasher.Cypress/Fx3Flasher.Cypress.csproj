@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Fx3Flasher.Cypress</RootNamespace>
+    <AssemblyName>Fx3Flasher.Cypress</AssemblyName>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fx3Flasher.Core\Fx3Flasher.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="CyUSB">
+      <HintPath>..\..\CyUSB.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
