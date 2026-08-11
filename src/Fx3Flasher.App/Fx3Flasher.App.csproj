@@ -8,8 +8,8 @@
     <Nullable>disable</Nullable>
     <RootNamespace>Fx3Flasher.App</RootNamespace>
     <AssemblyName>Fx3Flasher.App</AssemblyName>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
+    <!-- Cypress CyUSB.dll only works in a 32-bit process; running x64 throws an overflow in USBDeviceList. -->
+    <PlatformTarget>x86</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
