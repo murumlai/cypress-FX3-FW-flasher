@@ -39,11 +39,11 @@
                           HeadersVisibility="Column" CanUserAddRows="False"
                           SelectionMode="Single" GridLinesVisibility="Horizontal">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="40" />
-                        <DataGridTextColumn Header="Name" Binding="{Binding FriendlyName}" Width="*" />
-                        <DataGridTextColumn Header="USB ID" Binding="{Binding UsbIdText}" Width="90" />
-                        <DataGridTextColumn Header="State" Binding="{Binding State}" Width="120" />
-                        <DataGridTextColumn Header="Profile" Binding="{Binding ProfileName}" Width="130" />
+                        <DataGridTextColumn Header="#" Binding="{Binding Index, Mode=OneWay}" Width="40" />
+                        <DataGridTextColumn Header="Name" Binding="{Binding FriendlyName, Mode=OneWay}" Width="*" />
+                        <DataGridTextColumn Header="USB ID" Binding="{Binding UsbIdText, Mode=OneWay}" Width="90" />
+                        <DataGridTextColumn Header="State" Binding="{Binding State, Mode=OneWay}" Width="120" />
+                        <DataGridTextColumn Header="Profile" Binding="{Binding ProfileName, Mode=OneWay}" Width="130" />
                     </DataGrid.Columns>
                 </DataGrid>
             </GroupBox>
@@ -135,7 +135,7 @@
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" />
             <ProgressBar Grid.Column="1" Height="18" Minimum="0" Maximum="100"
-                         Value="{Binding ProgressPercent}" Margin="8,0" />
+                         Value="{Binding ProgressPercent, Mode=OneWay}" Margin="8,0" />
             <TextBlock Grid.Column="2" Text="{Binding ProgressStage}" VerticalAlignment="Center"
                        MinWidth="120" />
         </Grid>
