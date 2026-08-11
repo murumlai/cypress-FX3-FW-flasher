@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using CyUSB;
 using Fx3Flasher.Core.Devices;
@@ -203,45 +204,105 @@ namespace Fx3Flasher.Cypress
                         "Selected FX3 device is no longer present or is not accessible via the CyUSB driver.");
                 }
 
-                string temp = Path.Combine(
-                    Path.GetTempPath(), "fx3-detect-" + Guid.NewGuid().ToString("N") + ".img");
-                File.WriteAllBytes(temp, MinimalBootImage.Build());
+                cancellationToken.ThrowIfCancellationRequested();
+                Report(progress, 40, "Probing I2C EEPROM");
 
-                try
+                DeviceOperationResult result = RunI2cEepromProbe(fx3);
+                Report(progress, 100, result.Success ? "Done" : "Failed");
+                return result;
+            }
+        }
+
+        private static DeviceOperationResult RunI2cEepromProbe(CyFX3Device fx3)
+        {
+            CyControlEndPoint control = GetControlEndPoint(fx3);
+            if (control == null)
+            {
+                return DeviceOperationResult.Fail("Could not access the FX3 control endpoint for I2C EEPROM probing.");
+            }
+
+            byte[] image = MinimalBootImage.Build();
+            const int chunkSize = 4096;
+            int maxPacketSize = Math.Max(control.MaxPktSize, 1);
+            int fullChunks = image.Length / chunkSize;
+            int remainder = image.Length % chunkSize;
+            int offset = 0;
+
+            control.TimeOut = 5000;
+            control.Target = CyConst.TGT_DEVICE;
+            control.ReqType = CyConst.REQ_VENDOR;
+            control.Direction = CyConst.DIR_TO_DEVICE;
+            control.ReqCode = 0xBA;
+            control.Value = 0;
+            control.Index = 0;
+
+            for (int chunk = 0; chunk < fullChunks; chunk++)
+            {
+                byte[] buffer = new byte[chunkSize];
+                Array.Copy(image, offset, buffer, 0, chunkSize);
+                int length = chunkSize;
+                if (!control.XferData(ref buffer, ref length))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Report(progress, 40, "Probing I2C EEPROM");
-
-                    FX3_FWDWNLOAD_ERROR_CODE code =
-                        fx3.DownloadFw(temp, FX3_FWDWNLOAD_MEDIA_TYPE.I2CE2PROM);
-
-                    Report(progress, 100, "Done");
-
-                    if (code == FX3_FWDWNLOAD_ERROR_CODE.SUCCESS)
-                    {
-                        return DeviceOperationResult.Ok(
-                            "I2C EEPROM detected and writable: a ~4 KB probe was written and verified in the first bank. Re-program or erase to restore the device.",
-                            code.ToString());
-                    }
-
-                    if (code == FX3_FWDWNLOAD_ERROR_CODE.I2CE2PROM_UNKNOWN_I2C_SIZE)
-                    {
-                        return DeviceOperationResult.Fail(
-                            "FX3 could not determine an I2C EEPROM size even for a standard-density probe. Likely no EEPROM responding, or an I2C addressing/wiring/write-protect issue.",
-                            code.ToString());
-                    }
-
-                    DeviceOperationResult mapped = CyUsbErrorMap.ToResult(fx3, code, string.Empty);
                     return DeviceOperationResult.Fail(
-                        "I2C EEPROM appears present but the probe write failed: " + mapped.Message,
-                        code.ToString());
+                        "I2C EEPROM probe failed during the first-bank 4 KB write. " + FormatControlStatus(control));
                 }
-                finally
+
+                control.Index += (ushort)length;
+                offset += chunkSize;
+            }
+
+            if (remainder > 0)
+            {
+                int paddedLength = remainder;
+                if (paddedLength % maxPacketSize != 0)
                 {
-                    try { File.Delete(temp); }
-                    catch { /* temp cleanup is best-effort */ }
+                    paddedLength += maxPacketSize - (paddedLength % maxPacketSize);
+                }
+
+                byte[] tail = new byte[paddedLength];
+                Array.Copy(image, offset, tail, 0, remainder);
+                if (!control.XferData(ref tail, ref paddedLength))
+                {
+                    return DeviceOperationResult.Fail(
+                        "I2C EEPROM probe wrote the first 4 KB but failed on the final padded tail write. " + FormatControlStatus(control));
+                }
+
+                control.ReqCode = 0xBB;
+                control.Direction = CyConst.DIR_FROM_DEVICE;
+                if (!control.XferData(ref tail, ref paddedLength))
+                {
+                    return DeviceOperationResult.Fail(
+                        "I2C EEPROM probe writes completed, but the FX3 status/readback command failed. " + FormatControlStatus(control));
                 }
             }
+
+            return DeviceOperationResult.Ok(
+                "I2C EEPROM detected and writable: a ~4 KB first-bank probe write completed. Re-program or erase to restore the device.");
+        }
+
+        private static CyControlEndPoint GetControlEndPoint(CyFX3Device fx3)
+        {
+            Type type = fx3.GetType();
+            while (type != null)
+            {
+                FieldInfo field = type.GetField(
+                    "ControlEndPt", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (field != null)
+                {
+                    return field.GetValue(fx3) as CyControlEndPoint;
+                }
+
+                type = type.BaseType;
+            }
+
+            return null;
+        }
+
+        private static string FormatControlStatus(CyControlEndPoint control)
+        {
+            return string.Format(
+                "USB status: Usbd=0x{0:X8}, Nt=0x{1:X8}, LastError={2}, BytesWritten={3}.",
+                control.UsbdStatus, control.NtStatus, control.LastError, control.BytesWritten);
         }
 
         private string PrepareI2cEepromImage(string imageFilePath, Fx3DeviceInfo device)
