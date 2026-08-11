@@ -1,16 +1,16 @@
 [
   {
     "name": "CYUSB3014 Reference Board",
-    "description": "Sample profile for a CYUSB3014-based FX3 board booting from I2C EEPROM. Adjust identities and geometry to match real hardware before production use.",
+    "description": "CYUSB3014-based FX3 board booting from a Microchip AT24CM01 (1 Mbit / 128 KB) I2C EEPROM. Verify VID/PID against your hardware before production use.",
     "bootloaderIds": [
       { "vendorId": 1204, "productId": 243 }
     ],
     "applicationIds": [],
-    "eepromSizeBytes": 262144,
+    "eepromSizeBytes": 131072,
     "i2cAddress": 80,
-    "pageSizeBytes": 64,
+    "pageSizeBytes": 256,
     "writeDelayMs": 5,
-    "maxImageSizeBytes": 262144,
+    "maxImageSizeBytes": 131072,
     "reservedRegions": [],
     "allowProgram": true,
     "allowErase": true,
